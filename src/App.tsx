@@ -11,6 +11,7 @@ import {
   Info,
 } from 'lucide-react';
 import { sampleRooms } from '@/data/rooms';
+import { ExplainPanel, type CheckSnapshot } from '@/components/ExplainPanel';
 import {
   checkAvailability,
   formatTime,
@@ -66,6 +67,7 @@ function App() {
   const [startTimeInput, setStartTimeInput] = usePersistedState('startTimeInput', '10:00');
   const [endTimeInput, setEndTimeInput] = usePersistedState('endTimeInput', '11:00');
   const [result, setResult] = useState<CheckResult | null>(null);
+  const [snapshot, setSnapshot] = useState<CheckSnapshot | null>(null);
 
   const selectedRoom = useMemo(
     () => rooms.find((r) => r.id === selectedRoomId)!,
@@ -84,6 +86,14 @@ function App() {
       currentTime
     );
     setResult(res);
+    // Freeze the exact inputs of this decision for the explanation feature.
+    setSnapshot((prev) => ({
+      id: (prev?.id ?? 0) + 1,
+      roomLabel: selectedRoom.name,
+      start: startTime,
+      end: endTime,
+      result: res,
+    }));
   }
 
   return (
@@ -125,6 +135,7 @@ function App() {
                     onClick={() => {
                       setSelectedRoomId(room.id);
                       setResult(null);
+                      setSnapshot(null);
                     }}
                     className={`text-left rounded-xl border p-3 transition-all ${
                       selected
@@ -274,6 +285,13 @@ function App() {
                   <XCircle className="w-7 h-7 text-rose-600 shrink-0" />
                 )}
                 <div>
+                  <p
+                    className={`text-[11px] font-semibold uppercase tracking-wide ${
+                      result.available ? 'text-emerald-600' : 'text-rose-600'
+                    }`}
+                  >
+                    Confirmed status · booking rules
+                  </p>
                   <h3
                     className={`text-lg font-bold ${
                       result.available ? 'text-emerald-800' : 'text-rose-800'
@@ -292,6 +310,8 @@ function App() {
               </div>
             </div>
           )}
+
+          {result && snapshot && <ExplainPanel snapshot={snapshot} />}
 
           {!result && (
             <div className="bg-white rounded-2xl shadow-sm ring-1 ring-slate-200 p-6 text-center text-slate-400 text-sm">
